@@ -7,7 +7,7 @@ set -e
 
 # --- 1. Configurations ---
 export TARGET=cr16-elf
-export HOST=x86_64-w64-mingw32
+export HOST=x86_64-linux-gnu
 export BUILD=x86_64-linux-gnu
 
 # Source versions chosen for maximum compatibility with CR16
@@ -17,9 +17,9 @@ NEWLIB_VER="4.2.0.20211231"
 
 # Directories
 WORKSPACE="$(pwd)/cr16_workspace"
-PREFIX="$WORKSPACE/install_win64"
+PREFIX="/opt/cr16"
 SRC_DIR="$WORKSPACE/src"
-BUILD_DIR="$WORKSPACE/build"
+BUILD_DIR="$WORKSPACE/build-linux"
 
 # Force host compiler flags to handle old codebase nuances
 export CFLAGS_FOR_HOST="-O2 -fpermissive -Wno-error"
@@ -116,3 +116,4 @@ echo " SUCCESS: Your Windows CR16 Cross Toolchain has been created!"
 echo " Binaries can be found in: $PREFIX"
 echo " Copy the contents of 'install_win64' over to Windows."
 echo "==============================================================="
+

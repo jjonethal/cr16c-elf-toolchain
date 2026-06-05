@@ -55,19 +55,19 @@ mkdir -p build-binutils-s1 && cd build-binutils-s1
     --target=$TARGET \
     --prefix=$PREFIX_STAGE1 \
     --disable-nls \
-    --disable-werror
+    --disable-werror || { echo "error configure binutils"  ;  exit 1 ; }
  
 echo ===============================
 echo ==== make binutils stage 1 ====
 echo ===============================
 
-make -j$(nproc)
+make -j$(nproc)  || { echo "error make binutils"  ;  exit 1 ; }
 
 echo ==================================
 echo ==== install binutils stage 1 ====
 echo ==================================
 
-make install
+make install || { echo "error install binutils stage 1"  ;  exit 1 ; }
 cd ..
 
 mkdir -p build-gcc-s1 && cd build-gcc-s1
@@ -83,9 +83,9 @@ mkdir -p build-gcc-s1 && cd build-gcc-s1
     --disable-libssp \
     --disable-libgomp \
     --disable-multilib \
-    --enable-languages=c
-make -j$(nproc) all-gcc
-make install-gcc
+    --enable-languages=c  || { echo "error configure gcc stage 1"  ;  exit 1 ; }
+make -j$(nproc) all-gcc  || { echo "error make gcc stage 1"  ;  exit 1 ; }
+make install-gcc  || { echo "error install gcc stage 1"  ;  exit 1 ; }
 cd ..
 
 mkdir -p build-newlib && cd build-newlib
@@ -94,13 +94,13 @@ mkdir -p build-newlib && cd build-newlib
     --host=$BUILD \
     --target=$TARGET \
     --prefix=$PREFIX_STAGE1 \
-    --disable-multilib
-make -j$(nproc)
-make install
+    --disable-multilib  || { echo "error configure newlib stage 1"  ;  exit 1 ; }
+make -j$(nproc) || { echo "error build newlib stage 1"  ;  exit 1 ; }
+make install  || { echo "error install nwlib stage 1"  ;  exit 1 ; }
 cd ..
 
 cd build-gcc-s1
-make -j$(nproc) all-target-libgcc
-make install-target-libgcc
+make -j$(nproc) all-target-libgcc || { echo "error make gcc stage 1"  ;  exit 1 ; }
+make install-target-libgcc || { echo "error install gcc stage 1"  ;  exit 1 ; }
 cd ..
 

@@ -1,3 +1,4 @@
+#!/bin/bash
 # Source versions chosen for maximum compatibility with CR16
 BINUTILS_VER="2.38"
 GCC_VER="12.5.0"

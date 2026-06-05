@@ -104,3 +104,45 @@ make -j$(nproc) all-target-libgcc || { echo "error make gcc stage 1"  ;  exit 1 
 make install-target-libgcc || { echo "error install gcc stage 1"  ;  exit 1 ; }
 cd ..
 
+
+
+
+echo ====================================
+echo ==== configure binutils stage 2 ====
+echo ====================================
+
+
+mkdir -p build-binutils-canadian && cd build-binutils-canadian
+../binutils-$BINUTILS_VER/configure \
+    --build=$BUILD \
+    --host=$HOST \
+    --target=$TARGET \
+    --prefix=$PREFIX_FINAL \
+    --disable-nls \
+    --disable-werror || { echo "error configure binutils stage 2"  ;  exit 1 ; }
+make -j$(nproc)  || { echo "error make binutils stage 2"  ;  exit 1 ; }
+make install || { echo "error install binutils stage 2"  ;  exit 1 ; }
+cd ..
+
+
+echo ===============================
+echo ==== configure gcc stage 2 ====
+echo ===============================
+
+mkdir -p build-gcc-canadian && cd build-gcc-canadian
+../gcc-$GCC_VER/configure \
+    --build=$BUILD \
+    --host=$HOST \
+    --target=$TARGET \
+    --prefix=$PREFIX_FINAL \
+    --with-headers=$PREFIX_STAGE1/$TARGET/include \
+    --with-newlib \
+    --disable-shared \
+    --disable-threads \
+    --disable-libssp \
+    --disable-multilib \
+    --enable-languages=c,c++  || { echo "error configure gcc stage 2"  ;  exit 1 ; }
+make -j$(nproc) || { echo "error make gcc stage 2"  ;  exit 1 ; }
+make install || { echo "error install gcc stage 2"  ;  exit 1 ; }
+cd ..
+

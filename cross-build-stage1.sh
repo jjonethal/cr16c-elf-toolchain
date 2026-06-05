@@ -19,7 +19,11 @@ export PREFIX_FINAL=$prj_root/cr16-canadian
 
 export PATH=$PREFIX_STAGE1/bin:$PATH
 
-[ -d  $prj_root/src ] || mkdir $prj_root/src
+
+
+[ -d  $prj_src ] || mkdir $prj_src
+
+cd $prj_src || { echo "directory src not exist" }
 
 if [ ! -d "binutils-$BINUTILS_VER" ]; then
     echo "Downloading Binutils..."
@@ -35,7 +39,7 @@ if [ ! -d "gcc-$GCC_VER" ]; then
     # Download prerequisite support libraries inside the GCC directory
     cd "gcc-$GCC_VER"
     ./contrib/download_prerequisites
-    cd "$SRC_DIR"
+    cd "$prj_src"
 fi
 
 if [ ! -d "newlib-$NEWLIB_VER" ]; then

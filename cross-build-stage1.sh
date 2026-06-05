@@ -45,7 +45,9 @@ if [ ! -d "newlib-$NEWLIB_VER" ]; then
 fi
 
 
-
+echo ====================================
+echo ==== configure binutils stage 1 ====
+echo ====================================
 mkdir -p build-binutils-s1 && cd build-binutils-s1
 ../binutils-$BINUTILS_VER/configure \
     --build=$BUILD \
@@ -54,7 +56,17 @@ mkdir -p build-binutils-s1 && cd build-binutils-s1
     --prefix=$PREFIX_STAGE1 \
     --disable-nls \
     --disable-werror
+ 
+echo ===============================
+echo ==== make binutils stage 1 ====
+echo ===============================
+
 make -j$(nproc)
+
+echo ==================================
+echo ==== install binutils stage 1 ====
+echo ==================================
+
 make install
 cd ..
 

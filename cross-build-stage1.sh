@@ -23,7 +23,7 @@ export PATH=$PREFIX_STAGE1/bin:$PATH
 
 [ -d  $prj_src ] || mkdir $prj_src
 
-cd $prj_src || { echo "directory src not exist" }
+cd $prj_src || { echo "directory src not exist" ; exit 1 ;  }
 
 if [ ! -d "binutils-$BINUTILS_VER" ]; then
     echo "Downloading Binutils..."

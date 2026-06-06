@@ -19,7 +19,6 @@ export PATH=$PREFIX/bin:$PATH
 
 
 do_download=0
-
 do_stage1=0
 do_stage2=1
 

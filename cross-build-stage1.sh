@@ -57,7 +57,7 @@ echo ====================================
 echo ==== configure binutils stage 1 ====
 echo ====================================
 mkdir -p $prj_build/build-binutils-s1 && cd $prj_build/build-binutils-s1
-../binutils-$BINUTILS_VER/configure \
+$prj_src/binutils-$BINUTILS_VER/configure \
     --build=$BUILD \
     --host=$BUILD \
     --target=$TARGET \
@@ -80,7 +80,7 @@ cd ..
 
 mkdir -p $prj_build/build-gcc-s1 && cd $prj_build/build-gcc-s1
 make distclean
-../gcc-$GCC_VER/configure \
+$prj_src/gcc-$GCC_VER/configure \
     --build=$BUILD \
     --host=$BUILD \
     --target=$TARGET \
@@ -101,7 +101,7 @@ make install-gcc  || { echo "error install gcc stage 1"  ;  exit 1 ; }
 cd ..
 
 mkdir -p $prj_build/build-newlib && cd $prj_build/build-newlib
-../newlib-$NEWLIB_VER/configure \
+$prj_src/newlib-$NEWLIB_VER/configure \
     --build=$BUILD \
     --host=$BUILD \
     --target=$TARGET \
@@ -126,7 +126,7 @@ echo ====================================
 
 mkdir -p $prj_build/build-binutils-canadian && cd $prj_build/build-binutils-canadian
 make distclean
-../binutils-$BINUTILS_VER/configure \
+$prj_src/binutils-$BINUTILS_VER/configure \
     --build=$BUILD \
     --host=$HOST \
     --target=$TARGET \
@@ -145,7 +145,7 @@ echo ===============================
 
 mkdir -p $prj_build/build-gcc-canadian && cd $prj_build/build-gcc-canadian
 make distclean
-../gcc-$GCC_VER/configure \
+$prj_src/gcc-$GCC_VER/configure \
     --build=$BUILD \
     --host=$HOST \
     --target=$TARGET \

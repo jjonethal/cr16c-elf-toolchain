@@ -18,7 +18,11 @@ export PREFIX=/opt/cr16-elf
 export PATH=$PREFIX/bin:$PATH
 
 
-do_download=1
+do_download=0
+
+do_stage1=0
+do_stage2=1
+
 
 if [ $do_download == 1 ]
 then
@@ -54,85 +58,95 @@ then
 
 fi
 
+####### stage 1 ###################
+
+if [ $do_stage1 == 1 ]
+then
+
+    echo ====================================
+    echo ==== configure binutils stage 1 ====
+    echo ====================================
+    mkdir -p $prj_build/build-binutils && cd $prj_build/build-binutils
+    make distclean
+    $prj_src/binutils-$BINUTILS_VER/configure \
+        --target=$TARGET \
+        --prefix=$PREFIX \
+        --disable-nls \
+        --disable-werror || { echo "error configure binutils"  ;  exit 1 ; }
+     
+    echo ===============================
+    echo ==== make binutils stage 1 ====
+    echo ===============================
+
+    make -j$(nproc)  || { echo "error make binutils"  ;  exit 1 ; }
+
+    echo ==================================
+    echo ==== install binutils stage 1 ====
+    echo ==================================
+
+    make install || { echo "error install binutils stage 1"  ;  exit 1 ; }
+    cd ..
+
+    mkdir -p $prj_build/build-gcc-s1 && cd $prj_build/build-gcc-s1
+    make distclean
+    $prj_src/gcc-$GCC_VER/configure \
+        --target=$TARGET \
+        --prefix=$PREFIX \
+        --without-headers \
+        --with-newlib \
+        --disable-shared \
+        --disable-threads \
+        --disable-libssp \
+        --disable-libgomp \
+        --disable-multilib \
+        --enable-languages=c \
+        --disable-werror \
+        CXXFLAGS="-O2 -std=gnu++11" \
+        CFLAGS="-O2" || { echo "error configure gcc stage 1"  ;  exit 1 ; }
+    make -j$(nproc) all-gcc  || { echo "error make gcc stage 1"  ;  exit 1 ; }
+    make install-gcc  || { echo "error install gcc stage 1"  ;  exit 1 ; }
+    cd ..
 
 
-echo ====================================
-echo ==== configure binutils stage 1 ====
-echo ====================================
-mkdir -p $prj_build/build-binutils && cd $prj_build/build-binutils
-make distclean
-$prj_src/binutils-$BINUTILS_VER/configure \
-    --target=$TARGET \
-    --prefix=$PREFIX \
-    --disable-nls \
-    --disable-werror || { echo "error configure binutils"  ;  exit 1 ; }
- 
-echo ===============================
-echo ==== make binutils stage 1 ====
-echo ===============================
+    mkdir -p $prj_build/build-newlib && cd $prj_build/build-newlib
+    $prj_src/newlib-$NEWLIB_VER/configure \
+        --target=$TARGET \
+        --prefix=$PREFIX \
+        --disable-multilib  || { echo "error configure newlib stage 1"  ;  exit 1 ; }
+    make -j$(nproc) || { echo "error build newlib stage 1"  ;  exit 1 ; }
+    make install  || { echo "error install nwlib stage 1"  ;  exit 1 ; }
+    cd ..
 
-make -j$(nproc)  || { echo "error make binutils"  ;  exit 1 ; }
-
-echo ==================================
-echo ==== install binutils stage 1 ====
-echo ==================================
-
-make install || { echo "error install binutils stage 1"  ;  exit 1 ; }
-cd ..
-
-mkdir -p $prj_build/build-gcc-s1 && cd $prj_build/build-gcc-s1
-make distclean
-$prj_src/gcc-$GCC_VER/configure \
-    --target=$TARGET \
-    --prefix=$PREFIX \
-    --without-headers \
-    --with-newlib \
-    --disable-shared \
-    --disable-threads \
-    --disable-libssp \
-    --disable-libgomp \
-    --disable-multilib \
-    --enable-languages=c \
-    --disable-werror \
-    CXXFLAGS="-O2 -std=gnu++11" \
-    CFLAGS="-O2" || { echo "error configure gcc stage 1"  ;  exit 1 ; }
-make -j$(nproc) all-gcc  || { echo "error make gcc stage 1"  ;  exit 1 ; }
-make install-gcc  || { echo "error install gcc stage 1"  ;  exit 1 ; }
-cd ..
+fi
 
 
-mkdir -p $prj_build/build-newlib && cd $prj_build/build-newlib
-$prj_src/newlib-$NEWLIB_VER/configure \
-    --target=$TARGET \
-    --prefix=$PREFIX \
-    --disable-multilib  || { echo "error configure newlib stage 1"  ;  exit 1 ; }
-make -j$(nproc) || { echo "error build newlib stage 1"  ;  exit 1 ; }
-make install  || { echo "error install nwlib stage 1"  ;  exit 1 ; }
-cd ..
+####### stage 2 ###################
 
+if [ $do_stage2 == 1 ]
+    then
 
+    echo ===============================
+    echo ==== configure gcc stage 2 ====
+    echo ===============================
 
-
-echo ===============================
-echo ==== configure gcc stage 2 ====
-echo ===============================
-
-mkdir -p $prj_build/build-gcc-final && cd $prj_build/build-gcc-final
-make distclean
-$prj_src/gcc-$GCC_VER/configure \
-    --target=$TARGET \
-    --prefix=$PREFIX \
-    --with-headers=$PREFIX/$TARGET/include \
-    --with-newlib \
-    --disable-shared \
-    --disable-threads \
-    --disable-libssp \
-    --disable-multilib \
-    --enable-languages=c,c++ \
-    --disable-werror \
-    CXXFLAGS="-O2 -std=gnu++11" \
-    CFLAGS="-O2"    || { echo "error configure gcc stage 2"  ;  exit 1 ; }
-make -j$(nproc) || { echo "error make gcc stage 2"  ;  exit 1 ; }
-make install || { echo "error install gcc stage 2"  ;  exit 1 ; }
-cd ..
+    mkdir -p $prj_build/build-gcc-final && cd $prj_build/build-gcc-final
+    make distclean
+    $prj_src/gcc-$GCC_VER/configure \
+        --target=$TARGET \
+        --prefix=$PREFIX \
+        --with-headers=$PREFIX/$TARGET/include \
+        --with-newlib \
+        --disable-shared \
+        --disable-threads \
+        --disable-libssp \
+        --disable-multilib \
+        --disable-libstdcxx \
+        --enable-languages=c,c++ \
+        --disable-werror \
+        CXXFLAGS="-O2 -std=gnu++11" \
+        CFLAGS="-O2"    || { echo "error configure gcc stage 2"  ;  exit 1 ; }
+    make -j$(nproc) || { echo "error make gcc stage 2"  ;  exit 1 ; }
+    make install || { echo "error install gcc stage 2"  ;  exit 1 ; }
+    cd ..
+fi
 

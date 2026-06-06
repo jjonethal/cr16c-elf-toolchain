@@ -10,6 +10,9 @@ export TARGET=cr16-elf
 export HOST=x86_64-w64-mingw32
 export BUILD=x86_64-linux-gnu
 
+# patch cc0
+# https://gcc.gnu.org/pipermail/gcc-patches/2021-May/569657.html
+
 # Source versions chosen for maximum compatibility with CR16
 BINUTILS_VER="2.38"
 GCC_VER="12.5.0"

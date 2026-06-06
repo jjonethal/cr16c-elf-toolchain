@@ -1,7 +1,7 @@
 #!/bin/bash
 # Source versions chosen for maximum compatibility with CR16
 BINUTILS_VER="2.38"
-GCC_VER="12.5.0"
+GCC_VER="10.5.0"
 NEWLIB_VER="4.2.0.20211231"
 
 
@@ -13,6 +13,7 @@ export TARGET=cr16-elf           # Target architecture (Bare-metal CR16)
 
 export prj_root=$(pwd)
 export prj_src=$prj_root/src
+export prj_build=$prj_root/build
 
 export PREFIX_STAGE1=$prj_root/cr16-stage1
 export PREFIX_FINAL=$prj_root/cr16-canadian
@@ -22,37 +23,40 @@ export PATH=$PREFIX_STAGE1/bin:$PATH
 
 
 [ -d  $prj_src ] || mkdir $prj_src
+[ -d  $prj_build ] || mkdir $prj_build
 
 cd $prj_src || { echo "directory src not exist" ; exit 1 ;  }
 
-if [ ! -d "binutils-$BINUTILS_VER" ]; then
-    echo "Downloading Binutils..."
-    wget -c "https://ftp.gnu.org/gnu/binutils/binutils-$BINUTILS_VER.tar.xz"
-    tar -xf "binutils-$BINUTILS_VER.tar.xz"
-fi
+mkdir download && cd download
+echo "Downloading Binutils..."
+wget -c "https://ftp.gnu.org/gnu/binutils/binutils-$BINUTILS_VER.tar.xz"
 
-if [ ! -d "gcc-$GCC_VER" ]; then
-    echo "Downloading GCC..."
-    wget -c "https://ftp.gnu.org/gnu/gcc/gcc-$GCC_VER/gcc-$GCC_VER.tar.xz"
-    tar -xf "gcc-$GCC_VER.tar.xz"
-    
-    # Download prerequisite support libraries inside the GCC directory
-    cd "gcc-$GCC_VER"
-    ./contrib/download_prerequisites
-    cd "$prj_src"
-fi
+echo "Downloading GCC..."
+wget -c "https://ftp.gnu.org/gnu/gcc/gcc-$GCC_VER/gcc-$GCC_VER.tar.xz"
 
-if [ ! -d "newlib-$NEWLIB_VER" ]; then
-    echo "Downloading Newlib..."
-    wget -c "https://sourceware.org/pub/newlib/newlib-$NEWLIB_VER.tar.gz"
-    tar -xf "newlib-$NEWLIB_VER.tar.gz"
-fi
+echo "Downloading Newlib..."
+wget -c "https://sourceware.org/pub/newlib/newlib-$NEWLIB_VER.tar.gz"
+
+cd $prj_src
+tar -xf "download/binutils-$BINUTILS_VER.tar.xz"
+
+tar -xf "download/newlib-$NEWLIB_VER.tar.gz"
+
+tar -xf "download/gcc-$GCC_VER.tar.xz"
+
+# Download prerequisite support libraries inside the GCC directory
+cd "gcc-$GCC_VER"
+./contrib/download_prerequisites
+cd "$prj_build" || { echo "directory $prj_build not exist" ; exit 1 ;  }
+
+
+
 
 
 echo ====================================
 echo ==== configure binutils stage 1 ====
 echo ====================================
-mkdir -p build-binutils-s1 && cd build-binutils-s1
+mkdir -p $prj_build/build-binutils-s1 && cd $prj_build/build-binutils-s1
 ../binutils-$BINUTILS_VER/configure \
     --build=$BUILD \
     --host=$BUILD \
@@ -74,7 +78,8 @@ echo ==================================
 make install || { echo "error install binutils stage 1"  ;  exit 1 ; }
 cd ..
 
-mkdir -p build-gcc-s1 && cd build-gcc-s1
+mkdir -p $prj_build/build-gcc-s1 && cd $prj_build/build-gcc-s1
+make distclean
 ../gcc-$GCC_VER/configure \
     --build=$BUILD \
     --host=$BUILD \
@@ -87,12 +92,15 @@ mkdir -p build-gcc-s1 && cd build-gcc-s1
     --disable-libssp \
     --disable-libgomp \
     --disable-multilib \
-    --enable-languages=c  || { echo "error configure gcc stage 1"  ;  exit 1 ; }
+    --enable-languages=c \
+    --disable-werror \
+    CXXFLAGS="-O2 -std=gnu++11" \
+    CFLAGS="-O2" || { echo "error configure gcc stage 1"  ;  exit 1 ; }
 make -j$(nproc) all-gcc  || { echo "error make gcc stage 1"  ;  exit 1 ; }
 make install-gcc  || { echo "error install gcc stage 1"  ;  exit 1 ; }
 cd ..
 
-mkdir -p build-newlib && cd build-newlib
+mkdir -p $prj_build/build-newlib && cd $prj_build/build-newlib
 ../newlib-$NEWLIB_VER/configure \
     --build=$BUILD \
     --host=$BUILD \
@@ -103,7 +111,7 @@ make -j$(nproc) || { echo "error build newlib stage 1"  ;  exit 1 ; }
 make install  || { echo "error install nwlib stage 1"  ;  exit 1 ; }
 cd ..
 
-cd build-gcc-s1
+cd $prj_build/build-gcc-s1
 make -j$(nproc) all-target-libgcc || { echo "error make gcc stage 1"  ;  exit 1 ; }
 make install-target-libgcc || { echo "error install gcc stage 1"  ;  exit 1 ; }
 cd ..
@@ -116,7 +124,8 @@ echo ==== configure binutils stage 2 ====
 echo ====================================
 
 
-mkdir -p build-binutils-canadian && cd build-binutils-canadian
+mkdir -p $prj_build/build-binutils-canadian && cd $prj_build/build-binutils-canadian
+make distclean
 ../binutils-$BINUTILS_VER/configure \
     --build=$BUILD \
     --host=$HOST \
@@ -129,11 +138,13 @@ make install || { echo "error install binutils stage 2"  ;  exit 1 ; }
 cd ..
 
 
+
 echo ===============================
 echo ==== configure gcc stage 2 ====
 echo ===============================
 
-mkdir -p build-gcc-canadian && cd build-gcc-canadian
+mkdir -p $prj_build/build-gcc-canadian && cd $prj_build/build-gcc-canadian
+make distclean
 ../gcc-$GCC_VER/configure \
     --build=$BUILD \
     --host=$HOST \
@@ -145,7 +156,10 @@ mkdir -p build-gcc-canadian && cd build-gcc-canadian
     --disable-threads \
     --disable-libssp \
     --disable-multilib \
-    --enable-languages=c,c++  || { echo "error configure gcc stage 2"  ;  exit 1 ; }
+    --enable-languages=c,c++ \
+    --disable-werror \
+    CXXFLAGS="-O2 -std=gnu++11" \
+    CFLAGS="-O2"    || { echo "error configure gcc stage 2"  ;  exit 1 ; }
 make -j$(nproc) || { echo "error make gcc stage 2"  ;  exit 1 ; }
 make install || { echo "error install gcc stage 2"  ;  exit 1 ; }
 cd ..

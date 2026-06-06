@@ -6,19 +6,16 @@ NEWLIB_VER="4.2.0.20211231"
 
 
 
-export BUILD=x86_64-pc-linux-gnu
-export HOST=x86_64-w64-mingw32   # Example: Toolchain will run on Windows
 export TARGET=cr16-elf           # Target architecture (Bare-metal CR16)
 
 
 export prj_root=$(pwd)
 export prj_src=$prj_root/src
-export prj_build=$prj_root/build
+export prj_build=$prj_root/build-cr16-elf-linux
 
-export PREFIX_STAGE1=$prj_root/cr16-stage1
-export PREFIX_FINAL=$prj_root/cr16-canadian
+export PREFIX=/opt/cr16-elf
 
-export PATH=$PREFIX_STAGE1/bin:$PATH
+export PATH=$PREFIX/bin:$PATH
 
 
 do_download=1
@@ -62,13 +59,11 @@ fi
 echo ====================================
 echo ==== configure binutils stage 1 ====
 echo ====================================
-mkdir -p $prj_build/build-binutils-s1 && cd $prj_build/build-binutils-s1
+mkdir -p $prj_build/build-binutils && cd $prj_build/build-binutils
 make distclean
 $prj_src/binutils-$BINUTILS_VER/configure \
-    --build=$BUILD \
-    --host=$BUILD \
     --target=$TARGET \
-    --prefix=$PREFIX_STAGE1 \
+    --prefix=$PREFIX \
     --disable-nls \
     --disable-werror || { echo "error configure binutils"  ;  exit 1 ; }
  
@@ -88,10 +83,8 @@ cd ..
 mkdir -p $prj_build/build-gcc-s1 && cd $prj_build/build-gcc-s1
 make distclean
 $prj_src/gcc-$GCC_VER/configure \
-    --build=$BUILD \
-    --host=$BUILD \
     --target=$TARGET \
-    --prefix=$PREFIX_STAGE1 \
+    --prefix=$PREFIX \
     --without-headers \
     --with-newlib \
     --disable-shared \
@@ -107,42 +100,16 @@ make -j$(nproc) all-gcc  || { echo "error make gcc stage 1"  ;  exit 1 ; }
 make install-gcc  || { echo "error install gcc stage 1"  ;  exit 1 ; }
 cd ..
 
+
 mkdir -p $prj_build/build-newlib && cd $prj_build/build-newlib
 $prj_src/newlib-$NEWLIB_VER/configure \
-    --build=$BUILD \
-    --host=$BUILD \
     --target=$TARGET \
-    --prefix=$PREFIX_STAGE1 \
+    --prefix=$PREFIX \
     --disable-multilib  || { echo "error configure newlib stage 1"  ;  exit 1 ; }
 make -j$(nproc) || { echo "error build newlib stage 1"  ;  exit 1 ; }
 make install  || { echo "error install nwlib stage 1"  ;  exit 1 ; }
 cd ..
 
-cd $prj_build/build-gcc-s1
-make -j$(nproc) all-target-libgcc || { echo "error make gcc stage 1"  ;  exit 1 ; }
-make install-target-libgcc || { echo "error install gcc stage 1"  ;  exit 1 ; }
-cd ..
-
-
-
-
-echo ====================================
-echo ==== configure binutils stage 2 ====
-echo ====================================
-
-
-mkdir -p $prj_build/build-binutils-canadian && cd $prj_build/build-binutils-canadian
-make distclean
-$prj_src/binutils-$BINUTILS_VER/configure \
-    --build=$BUILD \
-    --host=$HOST \
-    --target=$TARGET \
-    --prefix=$PREFIX_FINAL \
-    --disable-nls \
-    --disable-werror || { echo "error configure binutils stage 2"  ;  exit 1 ; }
-make -j$(nproc)  || { echo "error make binutils stage 2"  ;  exit 1 ; }
-make install || { echo "error install binutils stage 2"  ;  exit 1 ; }
-cd ..
 
 
 
@@ -150,14 +117,12 @@ echo ===============================
 echo ==== configure gcc stage 2 ====
 echo ===============================
 
-mkdir -p $prj_build/build-gcc-canadian && cd $prj_build/build-gcc-canadian
+mkdir -p $prj_build/build-gcc-final && cd $prj_build/build-gcc-final
 make distclean
 $prj_src/gcc-$GCC_VER/configure \
-    --build=$BUILD \
-    --host=$HOST \
     --target=$TARGET \
-    --prefix=$PREFIX_FINAL \
-    --with-headers=$PREFIX_STAGE1/$TARGET/include \
+    --prefix=$PREFIX \
+    --with-headers=$PREFIX/$TARGET/include \
     --with-newlib \
     --disable-shared \
     --disable-threads \
